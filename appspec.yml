@@ -5,7 +5,7 @@ files:
     destination: /home/ubuntu/compiler-app
 hooks:
   BeforeInstall:
-    - location: scripts/install_deps.sh
+    - location: scripts/install_dependencies.sh
       timeout: 300
       runas: root
   ApplicationStart:
