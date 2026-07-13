@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Compiler (Java & Python)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { margin-top: 0; color: #333; }
+        .controls { margin-bottom: 15px; display: flex; gap: 15px; align-items: center; }
+        select, button { padding: 10px 15px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #0056b3; }
+        textarea { w-width: 100%; width: -webkit-fill-available; height: 300px; font-family: 'Courier New', Courier, monospace; font-size: 14px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; background-color: #1e1e1e; color: #d4d4d4; resize: vertical; }
+        .output-box { margin-top: 20px; padding: 15px; border-radius: 4px; background: #e9ecef; border-left: 5px solid #6c757d; font-family: monospace; white-space: pre-wrap; }
+        .success { border-left-color: #28a745; background-color: #d4edda; color: #155724; }
+        .error { border-left-color: #dc3545; background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Multi-Language Web Compiler</h1>
+    
+    <div class="controls">
+        <label for="language">Choose Language: </label>
+        <select id="language" onchange="updatePlaceholder()">
+            <option value="python">Python 3</option>
+            <option value="java">Java (Class must be 'Main')</option>
+        </select>
+        <button onclick="runCode()">Run & Save Code</button>
+    </div>
+
+    <textarea id="codeEditor" spellcheck="false">print("Hello, World!")</textarea>
+
+    <h3>Console Output</h3>
+    <div id="output" class="output-box">Your compiler output will display here...</div>
+</div>
+
+<script>
+    const templates = {
+        python: `print("Hello, World!")\n# write your code here`,
+        java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`
+    };
+
+    function updatePlaceholder() {
+        const lang = document.getElementById('language').value;
+        document.getElementById('codeEditor').value = templates[lang];
+    }
+
+    async function runCode() {
+        const language = document.getElementById('language').value;
+        const code = document.getElementById('codeEditor').value;
+        const outputDiv = document.getElementById('output');
+        
+        outputDiv.className = "output-box";
+        outputDiv.innerText = "Compiling and running...";
+
+        try {
+            const response = await fetch('/compile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language, code })
+            });
+            
+            const data = await response.json();
+            
+            if(data.success) {
+                outputDiv.classList.add('success');
+                outputDiv.innerText = data.output + (data.s3_saved ? "\n\n[Success: Saved to S3 bucket]" : "\n\n[Error: Code passed but S3 upload failed]");
+            } else {
+                outputDiv.classList.add('error');
+                outputDiv.innerText = data.output;
+            }
+        } catch (err) {
+            outputDiv.classList.add('error');
+            outputDiv.innerText = "Fatal Error connecting to the backend.";
+        }
+    }
+</script>
+</body>
+</html>
